@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/thomask3.github.io/phishing-admin/static/css/main.6e151b9a.css",
+    "main.js": "/thomask3.github.io/phishing-admin/static/js/main.5939ea8e.js",
+    "static/js/453.3d69524b.chunk.js": "/thomask3.github.io/phishing-admin/static/js/453.3d69524b.chunk.js",
+    "index.html": "/thomask3.github.io/phishing-admin/index.html",
+    "main.6e151b9a.css.map": "/thomask3.github.io/phishing-admin/static/css/main.6e151b9a.css.map",
+    "main.5939ea8e.js.map": "/thomask3.github.io/phishing-admin/static/js/main.5939ea8e.js.map",
+    "453.3d69524b.chunk.js.map": "/thomask3.github.io/phishing-admin/static/js/453.3d69524b.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.6e151b9a.css",
+    "static/js/main.5939ea8e.js"
+  ]
+}
