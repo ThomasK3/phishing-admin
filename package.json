@@ -2,7 +2,7 @@
   "name": "phishing-admin",
   "version": "0.1.0",
   "private": false,
-  "homepage": "https:/thomask3.github.io/phishing-admin",
+  "homepage": "https://thomask3.github.io/phishing-admin/",
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@testing-library/jest-dom": "^5.17.0",
