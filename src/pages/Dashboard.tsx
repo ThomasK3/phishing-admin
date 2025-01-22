@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Users, BarChart3, Send, LogOut } from 'lucide-react';
+import { Mail, Users, BarChart3, Send, LogOut, Settings } from 'lucide-react';
 
 const Dashboard = () => {
   return (
@@ -74,10 +74,10 @@ const Dashboard = () => {
             to="/groups"
           />
           <QuickAction
-            title="Zobrazit statistiky"
-            icon={<BarChart3 className="w-6 h-6" />}
+            title="Sending Profiles"
+            icon={<Settings className="w-6 h-6" />}
             color="purple"
-            to="/statistics"
+            to="/sending-profiles"
           />
         </div>
 
