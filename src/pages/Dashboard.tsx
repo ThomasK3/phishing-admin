@@ -1,7 +1,7 @@
 // src/pages/Dashboard.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, Users, BarChart3, Send, LogOut, Settings } from 'lucide-react';
+import { Mail, Users, BarChart3, Send, LogOut, Settings, Globe } from 'lucide-react';
 
 const Dashboard = () => {
   return (
@@ -56,10 +56,10 @@ const Dashboard = () => {
         {/* Rychlé akce */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <QuickAction
-            title="Nová kampaň"
+            title="Kampaně"
             icon={<Send className="w-6 h-6" />}
             color="blue"
-            to="/new-campaign"
+            to="/campaigns"
           />
           <QuickAction
             title="Vytvořit šablonu"
@@ -79,6 +79,12 @@ const Dashboard = () => {
             color="purple"
             to="/sending-profiles"
           />
+                      <QuickAction
+              title="Landing Pages"
+              icon={<Globe className="w-6 h-6" />}
+              color="indigo"
+              to="/landing-pages"
+            />
         </div>
 
         {/* Poslední aktivity */}
