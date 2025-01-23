@@ -1,25 +1,22 @@
 import express from 'express';
 import cors from 'cors';
 import { connectDB } from './config/database';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import campaignRoutes from './routes/campaign.routes';
+import landingPageRoutes from './routes/landing-page.routes';
+import emailTemplateRoutes from './routes/email-template.routes';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const port = process.env.PORT || 3001;
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Basic test route
-app.get('/', (req, res) => {
-  res.json({ message: 'Phishing Admin API is running' });
-});
+app.use('/api/campaigns', campaignRoutes);
+app.use('/api/landing-pages', landingPageRoutes);
+app.use('/api/email-templates', emailTemplateRoutes);
 
-// Connect to database and start server
 connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  app.listen(port, () => {
+    console.log(`Server běží na portu ${port}`);
   });
 });
