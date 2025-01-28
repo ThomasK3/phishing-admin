@@ -3,6 +3,27 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Users, BarChart3, Send, LogOut, Settings, Globe } from 'lucide-react';
 
+// Interfaces pro props
+interface StatCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ReactNode;
+  color: 'blue' | 'green' | 'yellow' | 'purple';
+}
+
+interface QuickActionProps {
+  title: string;
+  icon: React.ReactNode;
+  color: 'blue' | 'green' | 'yellow' | 'purple' | 'indigo';
+  to: string;
+}
+
+interface ActivityItemProps {
+  title: string;
+  description: string;
+  time: string;
+}
+
 const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-100">
@@ -114,7 +135,7 @@ const Dashboard = () => {
 };
 
 // Pomocné komponenty
-const StatCard = ({ title, value, icon, color }) => {
+const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
   const colorClasses = {
     blue: 'bg-blue-50 text-blue-600',
     green: 'bg-green-50 text-green-600',
@@ -135,12 +156,14 @@ const StatCard = ({ title, value, icon, color }) => {
   );
 };
 
-const QuickAction = ({ title, icon, color, to }) => {
+
+const QuickAction: React.FC<QuickActionProps> = ({ title, icon, color, to }) => {
   const colorClasses = {
     blue: 'hover:bg-blue-50 hover:text-blue-600',
     green: 'hover:bg-green-50 hover:text-green-600',
     yellow: 'hover:bg-yellow-50 hover:text-yellow-600',
-    purple: 'hover:bg-purple-50 hover:text-purple-600'
+    purple: 'hover:bg-purple-50 hover:text-purple-600',
+    indigo: 'hover:bg-indigo-50 hover:text-indigo-600'
   };
 
   return (
@@ -156,7 +179,7 @@ const QuickAction = ({ title, icon, color, to }) => {
   );
 };
 
-const ActivityItem = ({ title, description, time }) => {
+const ActivityItem: React.FC<ActivityItemProps> = ({ title, description, time }) => {
   return (
     <div className="flex items-start space-x-3">
       <div className="flex-1">

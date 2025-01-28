@@ -1,7 +1,7 @@
 // src/components/EmailTemplateEditor.tsx
 import React, { useState } from 'react';
-import { Mail, Save, Trash2, Plus, Eye, Upload, Image, FileText, Code, Clock, Globe, AlertCircle } from 'lucide-react';
-import EmailImportDialog from './EmailImportDialog.tsx';
+import { Mail, Save, Trash2, Eye, Upload, Image, FileText, Code, Clock, Globe, AlertCircle } from 'lucide-react';
+import EmailImportDialog from './EmailImportDialog';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 

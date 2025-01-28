@@ -1,15 +1,16 @@
 // src/App.tsx
+// src/App.tsx
 import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
-import Dashboard from './pages/Dashboard.tsx';
-import EmailTemplates from './pages/EmailTemplates.tsx';
-import SendingProfiles from './pages/SendingProfiles.tsx';
-import Groups from './pages/Groups.tsx';
-import Campaigns from './pages/Campaigns.tsx';
-import NewCampaign from './pages/NewCampaign.tsx';
-import CampaignDetail from './pages/CampaignDetail.tsx';
-import LandingPages from './pages/LandingPages.tsx';
-import LandingPageEditor from './pages/LandingPageEditor.tsx';
+import Dashboard from './pages/Dashboard';
+import EmailTemplates from './pages/EmailTemplates';
+import SendingProfiles from './pages/SendingProfiles';
+import Groups from './pages/Groups';
+import Campaigns from './pages/Campaigns';
+import NewCampaign from './pages/NewCampaign';
+import CampaignDetail from './pages/CampaignDetail';
+import LandingPages from './pages/LandingPages';
+import LandingPageEditor from './pages/LandingPageEditor';
 
 const App: React.FC = () => {
   return (

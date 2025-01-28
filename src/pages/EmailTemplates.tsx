@@ -1,6 +1,6 @@
 // src/pages/EmailTemplates.tsx
 import React from 'react';
-import EmailTemplateEditor from '../components/EmailTemplateEditor.tsx';
+import EmailTemplateEditor from '../components/EmailTemplateEditor';
 
 const EmailTemplates: React.FC = () => {
   return (
