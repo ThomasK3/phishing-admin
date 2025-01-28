@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom';
-import GroupList from '../components/GroupList.tsx';
-import GroupDetail from '../components/GroupDetail.tsx';
+import GroupList from '../components/GroupList';
+import GroupDetail from '../components/GroupDetail';
 
 interface Group {
   id: string;

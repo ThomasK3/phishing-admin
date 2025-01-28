@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 interface ImportDialogProps {
   isOpen: boolean;

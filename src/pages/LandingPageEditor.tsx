@@ -1,7 +1,7 @@
 // src/pages/LandingPageEditor.tsx
 import React, { useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Globe, Code, Eye, AlertCircle } from 'lucide-react';
+import { Save, ArrowLeft, Eye, AlertCircle } from 'lucide-react';
 import MonacoEditor from 'react-monaco-editor';
 
 interface LandingPageData {
