@@ -1,7 +1,7 @@
 // src/pages/LandingPageEditor.tsx
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Upload, Globe, Code, Eye, AlertCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Eye, Image, Globe, Code, AlertCircle } from 'lucide-react';
 import MonacoEditor from 'react-monaco-editor';
 import LandingPageImporter from '../components/LandingPageImporter';
 import LandingPagePreview from '../components/LandingPagePreview';
@@ -16,13 +16,10 @@ interface LandingPageData {
   status: 'active' | 'draft';
 }
 
-const LandingPageEditor = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const urlInputRef = useRef<HTMLInputElement>(null);
-
+const LandingPageEditor: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<'html' | 'css'>('html');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState<LandingPageData>({
     name: '',
     html: '',
@@ -32,39 +29,49 @@ const LandingPageEditor = () => {
     redirectUrl: 'https://office.com',
     status: 'draft'
   });
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
 
-  // Načtení existující stránky při editaci
+  const navigate = useNavigate();
+  const { id } = useParams();
+
   useEffect(() => {
     const loadPage = async () => {
       if (!id) {
         setLoading(false);
         return;
       }
-
+  
       try {
+        console.log('Loading page with ID:', id); // Debug log
         const response = await fetch(`http://localhost:3001/api/landing-pages/${id}`);
+        
         if (!response.ok) {
-          throw new Error('Stránka nenalezena');
+          throw new Error(`Failed to load page: ${response.statusText}`);
         }
-
+        
         const data = await response.json();
-        setPage(data);
+        console.log('Loaded page data:', data); // Debug log
+        
+        setPage({
+          name: data.name || '',
+          html: data.html || '',
+          css: data.css || '',
+          captureData: data.captureData ?? true,
+          captureFields: data.captureFields || ['username', 'password'],
+          redirectUrl: data.redirectUrl || 'https://office.com',
+          status: data.status || 'draft'
+        });
       } catch (error) {
-        console.error('Error loading landing page:', error);
-        alert('Chyba při načítání stránky');
-        navigate('/landing-pages');
+        console.error('Error loading page:', error);
+        setError(error instanceof Error ? error.message : 'Neznámá chyba');
       } finally {
         setLoading(false);
       }
     };
-
+  
     loadPage();
-  }, [id, navigate]);
-
-  const [activeTab, setActiveTab] = useState<'html' | 'css'>('html');
-  const [importMethod, setImportMethod] = useState<'file' | 'url' | null>(null);
-  const [previewMode, setPreviewMode] = useState(false);
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+  }, [id]);
 
   const handleSave = async () => {
     if (!page.name) {
@@ -73,40 +80,32 @@ const LandingPageEditor = () => {
     }
 
     try {
-      // Logování pro debugging
-      console.log('Saving page:', page);
-      console.log('API URL:', `http://localhost:3001/api/landing-pages${id ? `/${id}` : ''}`);
-
-      const response = await fetch(`http://localhost:3001/api/landing-pages${id ? `/${id}` : ''}`, {
-        method: id ? 'PUT' : 'POST',
+      const url = `http://localhost:3001/api/landing-pages${id ? `/${id}` : ''}`;
+      const method = id ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
         },
         body: JSON.stringify(page)
       });
 
-      // Logování response
-      console.log('Response status:', response.status);
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
-
       if (!response.ok) {
-        throw new Error(responseData.error || 'Network response was not ok');
+        throw new Error('Chyba při ukládání stránky');
       }
 
-      alert('Stránka byla úspěšně uložena');
+      alert(id ? 'Stránka byla úspěšně aktualizována' : 'Stránka byla úspěšně vytvořena');
       navigate('/landing-pages');
     } catch (error) {
-      console.error('Error saving landing page:', error);
-      alert(`Chyba při ukládání stránky: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
+      setError(error instanceof Error ? error.message : 'Neznámá chyba');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="text-lg">Načítám...</div>
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
       </div>
     );
   }
@@ -190,7 +189,7 @@ const LandingPageEditor = () => {
             <div className="border rounded-lg">
               <div className="h-96">
                 <MonacoEditor
-                  language={activeTab === 'html' ? 'html' : 'css'}
+                  language={activeTab}
                   theme="vs-light"
                   value={activeTab === 'html' ? page.html : page.css}
                   onChange={(value) => setPage({
@@ -201,29 +200,7 @@ const LandingPageEditor = () => {
                     minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     fontSize: 14,
-                    wordWrap: 'on',
-                    formatOnPaste: true,
-                    formatOnType: true,
-                    folding: true,
-                    renderWhitespace: 'selection',
-                    suggestOnTriggerCharacters: true,
-                    tabSize: 2,
-                    autoClosingBrackets: 'always',
-                    autoClosingQuotes: 'always',
-                    autoIndent: 'full',
-                    contextmenu: true,
-                    // HTML specifické nastavení
-                    ...(activeTab === 'html' ? {
-                      autoClosingTags: true,
-                      'editor.suggest.showClasses': true,
-                      'editor.suggest.showAttributes': true,
-                      'editor.suggest.showElements': true,
-                    } : {}),
-                    // CSS specifické nastavení
-                    ...(activeTab === 'css' ? {
-                      colorDecorators: true,
-                      suggestOnTriggerCharacters: true,
-                    } : {})
+                    wordWrap: 'on'
                   }}
                 />
               </div>
@@ -232,24 +209,15 @@ const LandingPageEditor = () => {
 
           {/* Zachytávání dat */}
           <div className="p-6 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-medium">Zachytávání dat</h2>
-                <p className="text-sm text-gray-500">
-                  Nastavte, která data chcete z formulářů zachytávat
-                </p>
-              </div>
-              <div className="flex items-center">
-                <input
-                  type="checkbox"
-                  checked={page.captureData}
-                  onChange={(e) => setPage({...page, captureData: e.target.checked})}
-                  className="mr-2"
-                />
-                <span className="text-sm font-medium">Povolit zachytávání dat</span>
-              </div>
+            <div className="flex items-center mb-2">
+              <input
+                type="checkbox"
+                className="mr-2"
+                checked={page.captureData}
+                onChange={(e) => setPage({...page, captureData: e.target.checked})}
+              />
+              <label className="text-sm font-medium">Povolit zachytávání dat</label>
             </div>
-
             {page.captureData && (
               <div className="mt-4">
                 <div className="flex flex-wrap gap-2">
@@ -318,7 +286,6 @@ const LandingPageEditor = () => {
         </div>
       </div>
 
-      {/* Import Dialog */}
       <LandingPageImporter
         isOpen={isImportDialogOpen}
         onClose={() => setIsImportDialogOpen(false)}
@@ -328,10 +295,10 @@ const LandingPageEditor = () => {
             html: content.html,
             css: content.css
           });
+          setIsImportDialogOpen(false);
         }}
       />
 
-      {/* Preview Dialog */}
       <LandingPagePreview
         isOpen={previewMode}
         onClose={() => setPreviewMode(false)}
