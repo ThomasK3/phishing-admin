@@ -1,9 +1,10 @@
 // src/components/EmailTemplateEditor.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Save, Trash2, Eye, Upload, Image, FileText, Code, Clock, Globe, AlertCircle } from 'lucide-react';
 import EmailImportDialog from './EmailImportDialog';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
+import { api } from '../services/api';
 
 interface EmailTemplate {
   id: number;
@@ -24,7 +25,10 @@ interface EmailTemplate {
 }
 
 const EmailTemplateEditor: React.FC = () => {
+  // State management
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<EmailTemplate>({
     id: 0,
     internalName: '',
@@ -43,7 +47,19 @@ const EmailTemplateEditor: React.FC = () => {
     fakeForwardFrom: ''
   });
 
-  const [previewMode, setPreviewMode] = useState(false);
+  // Načtení šablon při prvním renderu
+  useEffect(() => {
+    const loadTemplates = async () => {
+      try {
+        const loadedTemplates = await api.getEmailTemplates();
+        setTemplates(loadedTemplates);
+      } catch (error) {
+        console.error('Chyba při načítání šablon:', error);
+      }
+    };
+
+    loadTemplates();
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -63,7 +79,7 @@ const EmailTemplateEditor: React.FC = () => {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     // Validace povinných polí
@@ -72,39 +88,56 @@ const EmailTemplateEditor: React.FC = () => {
       return;
     }
 
-    // Přidání nové šablony
-    const newTemplate: EmailTemplate = {
-      ...currentTemplate,
-      id: Date.now()
-    };
+    try {
+      if (currentTemplate.id === 0) {
+        // Vytvoření nové šablony
+        const newTemplate = await api.createEmailTemplate(currentTemplate);
+        setTemplates([...templates, newTemplate]);
+      } else {
+        // Aktualizace existující šablony
+        const updatedTemplate = await api.updateEmailTemplate(
+          currentTemplate.id.toString(),
+          currentTemplate
+        );
+        setTemplates(templates.map(t => 
+          t.id === currentTemplate.id ? updatedTemplate : t
+        ));
+      }
 
-    setTemplates([...templates, newTemplate]);
-
-    // Reset formuláře
-    setCurrentTemplate({
-      id: 0,
-      internalName: '',
-      envelopeSender: '',
-      displayName: '',
-      replyTo: '',
-      subject: '',
-      content: '',
-      isHTML: false,
-      hasTrackingPixel: false,
-      attachments: [],
-      priority: 'normal',
-      language: 'cs',
-      scheduledTime: '',
-      includeFakeForward: false,
-      fakeForwardFrom: ''
-    });
+      // Reset formuláře
+      setCurrentTemplate({
+        id: 0,
+        internalName: '',
+        envelopeSender: '',
+        displayName: '',
+        replyTo: '',
+        subject: '',
+        content: '',
+        isHTML: false,
+        hasTrackingPixel: false,
+        attachments: [],
+        priority: 'normal',
+        language: 'cs',
+        scheduledTime: '',
+        includeFakeForward: false,
+        fakeForwardFrom: ''
+      });
+    } catch (error) {
+      console.error('Chyba při ukládání šablony:', error);
+      alert('Nepodařilo se uložit šablonu');
+    }
   };
 
-  const deleteTemplate = (id: number) => {
-    setTemplates(templates.filter(template => template.id !== id));
+  const deleteTemplate = async (id: number) => {
+    try {
+      await api.deleteEmailTemplate(id.toString());
+      setTemplates(templates.filter(template => template.id !== id));
+    } catch (error) {
+      console.error('Chyba při mazání šablony:', error);
+      alert('Nepodařilo se smazat šablonu');
+    }
   };
 
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const handleEmailImport = (parsedEmail: any) => {
     setCurrentTemplate({
       ...currentTemplate,
@@ -134,6 +167,8 @@ const EmailTemplateEditor: React.FC = () => {
     'list', 'bullet', 'indent',
     'link', 'image'
   ];
+
+  // Return statement následuje...
 
   return (
     <div className="max-w-6xl mx-auto p-6">

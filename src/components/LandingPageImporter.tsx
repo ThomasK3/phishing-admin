@@ -1,4 +1,3 @@
-// src/components/LandingPageImporter.tsx
 import React, { useState, useRef } from 'react';
 import { Upload, Globe, X, AlertCircle } from 'lucide-react';
 
@@ -12,13 +11,13 @@ interface ImportedContent {
   }>;
 }
 
-interface LandingPageImporterProps {
+interface Props {
   isOpen: boolean;
   onClose: () => void;
   onImport: (content: ImportedContent) => void;
 }
 
-const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
+const LandingPageImporter: React.FC<Props> = ({
   isOpen,
   onClose,
   onImport
@@ -65,7 +64,7 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
           url: img.src
         });
         // Nahradit URL za placeholder
-        img.src = `/api/placeholder/${img.width || 400}/${img.height || 300}`;
+        img.src = '/api/placeholder/400/300';
       }
     }
 
@@ -122,7 +121,6 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
     setError(null);
 
     try {
-      // V produkci by toto bylo řešeno přes backend proxy
       const response = await fetch(url);
       const html = await response.text();
       
@@ -139,7 +137,7 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-semibold">Import landing page</h2>
@@ -148,7 +146,6 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
           </button>
         </div>
 
-        {/* Výběr metody importu */}
         <div className="mb-6">
           <div className="flex space-x-4">
             <button
@@ -174,7 +171,6 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
           </div>
         </div>
 
-        {/* Import ze souborů */}
         {importMethod === 'file' && (
           <div>
             <input
@@ -196,7 +192,6 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
           </div>
         )}
 
-        {/* Import z URL */}
         {importMethod === 'url' && (
           <div>
             <div className="flex gap-2">
@@ -220,7 +215,6 @@ const LandingPageImporter: React.FC<LandingPageImporterProps> = ({
           </div>
         )}
 
-        {/* Chybová hláška */}
         {error && (
           <div className="mt-4 p-3 bg-red-50 text-red-700 rounded flex items-center">
             <AlertCircle className="w-5 h-5 mr-2" />
