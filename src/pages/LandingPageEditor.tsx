@@ -1,8 +1,10 @@
 // src/pages/LandingPageEditor.tsx
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { Save, ArrowLeft, Eye, AlertCircle } from 'lucide-react';
+import { Save, ArrowLeft, Upload, Globe, Code, Eye, AlertCircle } from 'lucide-react';
 import MonacoEditor from 'react-monaco-editor';
+import LandingPageImporter from '../components/LandingPageImporter';
+import LandingPagePreview from '../components/LandingPagePreview';
 
 interface LandingPageData {
   name: string;
@@ -20,6 +22,7 @@ const LandingPageEditor = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const urlInputRef = useRef<HTMLInputElement>(null);
 
+  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState<LandingPageData>({
     name: '',
     html: '',
@@ -30,40 +33,38 @@ const LandingPageEditor = () => {
     status: 'draft'
   });
 
+  // Načtení existující stránky při editaci
+  useEffect(() => {
+    const loadPage = async () => {
+      if (!id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3001/api/landing-pages/${id}`);
+        if (!response.ok) {
+          throw new Error('Stránka nenalezena');
+        }
+
+        const data = await response.json();
+        setPage(data);
+      } catch (error) {
+        console.error('Error loading landing page:', error);
+        alert('Chyba při načítání stránky');
+        navigate('/landing-pages');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPage();
+  }, [id, navigate]);
+
   const [activeTab, setActiveTab] = useState<'html' | 'css'>('html');
   const [importMethod, setImportMethod] = useState<'file' | 'url' | null>(null);
   const [previewMode, setPreviewMode] = useState(false);
-
-  const handleFileImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      try {
-        const text = await file.text();
-        if (file.name.endsWith('.html')) {
-          setPage({ ...page, html: text });
-        } else if (file.name.endsWith('.css')) {
-          setPage({ ...page, css: text });
-        }
-      } catch (error) {
-        console.error('Chyba při načítání souboru:', error);
-        alert('Nepodařilo se načíst soubor');
-      }
-    }
-  };
-
-  const handleUrlImport = async () => {
-    const url = urlInputRef.current?.value;
-    if (!url) return;
-
-    try {
-      const response = await fetch(url);
-      const html = await response.text();
-      setPage({ ...page, html });
-    } catch (error) {
-      console.error('Chyba při importu URL:', error);
-      alert('Nepodařilo se importovat stránku z URL');
-    }
-  };
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
 
   const handleSave = async () => {
     if (!page.name) {
@@ -71,10 +72,44 @@ const LandingPageEditor = () => {
       return;
     }
 
-    // TODO: Implementace uložení
-    console.log('Ukládám stránku:', page);
-    navigate('/landing-pages');
+    try {
+      // Logování pro debugging
+      console.log('Saving page:', page);
+      console.log('API URL:', `http://localhost:3001/api/landing-pages${id ? `/${id}` : ''}`);
+
+      const response = await fetch(`http://localhost:3001/api/landing-pages${id ? `/${id}` : ''}`, {
+        method: id ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(page)
+      });
+
+      // Logování response
+      console.log('Response status:', response.status);
+      const responseData = await response.json();
+      console.log('Response data:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'Network response was not ok');
+      }
+
+      alert('Stránka byla úspěšně uložena');
+      navigate('/landing-pages');
+    } catch (error) {
+      console.error('Error saving landing page:', error);
+      alert(`Chyba při ukládání stránky: ${error instanceof Error ? error.message : 'Neznámá chyba'}`);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+        <div className="text-lg">Načítám...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -115,65 +150,6 @@ const LandingPageEditor = () => {
             </div>
           </div>
 
-          {/* Import */}
-          <div className="p-6 border-b">
-            <h2 className="text-lg font-medium mb-4">Import stránky</h2>
-            <div className="space-y-4">
-              <div>
-                <button
-                  onClick={() => setImportMethod('file')}
-                  className={`mr-4 px-4 py-2 rounded ${
-                    importMethod === 'file' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  Import ze souboru
-                </button>
-                <button
-                  onClick={() => setImportMethod('url')}
-                  className={`px-4 py-2 rounded ${
-                    importMethod === 'url' ? 'bg-blue-500 text-white' : 'bg-gray-100'
-                  }`}
-                >
-                  Import z URL
-                </button>
-              </div>
-
-              {importMethod === 'file' && (
-                <div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept=".html,.css"
-                    onChange={handleFileImport}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-blue-50 file:text-blue-700
-                      hover:file:bg-blue-100"
-                  />
-                </div>
-              )}
-
-              {importMethod === 'url' && (
-                <div className="flex gap-2">
-                  <input
-                    type="url"
-                    ref={urlInputRef}
-                    placeholder="https://example.com"
-                    className="flex-1 p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                  />
-                  <button
-                    onClick={handleUrlImport}
-                    className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-                  >
-                    Importovat
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-
           {/* Editor */}
           <div className="p-6 border-b">
             <div className="flex justify-between items-center mb-4">
@@ -194,6 +170,13 @@ const LandingPageEditor = () => {
                 >
                   CSS
                 </button>
+                <button
+                  onClick={() => setIsImportDialogOpen(true)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 flex items-center"
+                >
+                  <Upload className="w-4 h-4 mr-2" />
+                  Importovat
+                </button>
               </div>
               <button
                 onClick={() => setPreviewMode(!previewMode)}
@@ -205,46 +188,46 @@ const LandingPageEditor = () => {
             </div>
 
             <div className="border rounded-lg">
-              <div className="h-96 overflow-hidden">
-                {activeTab === 'html' ? (
-                  <MonacoEditor
-                    language="html"
-                    theme="vs-light"
-                    value={page.html}
-                    onChange={(value) => setPage({...page, html: value})}
-                    options={{
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      fontSize: 14,
-                      wordWrap: 'on'
-                    }}
-                  />
-                ) : (
-                  <MonacoEditor
-                    language="css"
-                    theme="vs-light"
-                    value={page.css}
-                    onChange={(value) => setPage({...page, css: value})}
-                    options={{
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      fontSize: 14,
-                      wordWrap: 'on'
-                    }}
-                  />
-                )}
-              </div>
-            </div>
-
-            {previewMode && (
-              <div className="mt-4 border rounded-lg p-4">
-                <div 
-                  dangerouslySetInnerHTML={{ 
-                    __html: `<style>${page.css}</style>${page.html}` 
-                  }} 
+              <div className="h-96">
+                <MonacoEditor
+                  language={activeTab === 'html' ? 'html' : 'css'}
+                  theme="vs-light"
+                  value={activeTab === 'html' ? page.html : page.css}
+                  onChange={(value) => setPage({
+                    ...page,
+                    [activeTab]: value
+                  })}
+                  options={{
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    fontSize: 14,
+                    wordWrap: 'on',
+                    formatOnPaste: true,
+                    formatOnType: true,
+                    folding: true,
+                    renderWhitespace: 'selection',
+                    suggestOnTriggerCharacters: true,
+                    tabSize: 2,
+                    autoClosingBrackets: 'always',
+                    autoClosingQuotes: 'always',
+                    autoIndent: 'full',
+                    contextmenu: true,
+                    // HTML specifické nastavení
+                    ...(activeTab === 'html' ? {
+                      autoClosingTags: true,
+                      'editor.suggest.showClasses': true,
+                      'editor.suggest.showAttributes': true,
+                      'editor.suggest.showElements': true,
+                    } : {}),
+                    // CSS specifické nastavení
+                    ...(activeTab === 'css' ? {
+                      colorDecorators: true,
+                      suggestOnTriggerCharacters: true,
+                    } : {})
+                  }}
                 />
               </div>
-            )}
+            </div>
           </div>
 
           {/* Zachytávání dat */}
@@ -334,11 +317,29 @@ const LandingPageEditor = () => {
           </div>
         </div>
       </div>
+
+      {/* Import Dialog */}
+      <LandingPageImporter
+        isOpen={isImportDialogOpen}
+        onClose={() => setIsImportDialogOpen(false)}
+        onImport={(content) => {
+          setPage({
+            ...page,
+            html: content.html,
+            css: content.css
+          });
+        }}
+      />
+
+      {/* Preview Dialog */}
+      <LandingPagePreview
+        isOpen={previewMode}
+        onClose={() => setPreviewMode(false)}
+        html={page.html}
+        css={page.css}
+      />
     </div>
   );
 };
-
-// Pro TypeScript podporu
-declare module 'react-monaco-editor';
 
 export default LandingPageEditor;

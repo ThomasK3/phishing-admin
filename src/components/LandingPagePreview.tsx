@@ -1,15 +1,14 @@
-// src/components/LandingPagePreview.tsx
 import React, { useState } from 'react';
 import { Smartphone, Monitor, X, Maximize2, Minimize2 } from 'lucide-react';
 
-interface LandingPagePreviewProps {
+interface Props {
   html: string;
   css: string;
   isOpen: boolean;
   onClose: () => void;
 }
 
-const LandingPagePreview: React.FC<LandingPagePreviewProps> = ({
+const LandingPagePreview: React.FC<Props> = ({
   html,
   css,
   isOpen,

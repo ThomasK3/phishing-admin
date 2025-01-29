@@ -1,5 +1,5 @@
 // src/pages/LandingPages.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Globe, Eye, Copy, Trash2, CheckCircle, AlertCircle, Clock } from 'lucide-react';
 
@@ -17,21 +17,36 @@ interface LandingPage {
 }
 
 const LandingPages: React.FC = () => {
-  // Mock data - později nahradit API voláním
-  const [pages, setPages] = useState<LandingPage[]>([
-    {
-      id: 1,
-      name: "Office 365 Login",
-      url: "/phish/office365",
-      status: "active",
-      type: "imported",
-      captureData: true,
-      visits: 45,
-      submissions: 12,
-      lastModified: "2024-01-22T10:00:00",
-      createdAt: "2024-01-20T14:30:00"
+  const [pages, setPages] = useState<LandingPage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchPages();
+  }, []);
+
+  const fetchPages = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching landing pages...');
+      const response = await fetch('http://localhost:3001/api/landing-pages');
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      const data = await response.json();
+      console.log('Fetched pages:', data);
+      setPages(data);
+    } catch (error) {
+      console.error('Error fetching landing pages:', error);
+      setError(error instanceof Error ? error.message : 'Neznámá chyba');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getStatusBadge = (status: LandingPage['status']) => {
     const badges = {
@@ -49,22 +64,51 @@ const LandingPages: React.FC = () => {
     );
   };
 
-  const deletePage = (id: number) => {
+  const deletePage = async (id: number) => {
     if (window.confirm('Opravdu chcete smazat tuto landing page?')) {
-      setPages(pages.filter(page => page.id !== id));
+      try {
+        const response = await fetch(`http://localhost:3001/api/landing-pages/${id}`, {
+          method: 'DELETE'
+        });
+
+        if (!response.ok) {
+          throw new Error('Chyba při mazání stránky');
+        }
+
+        setPages(pages.filter(page => page.id !== id));
+      } catch (error) {
+        console.error('Error deleting landing page:', error);
+        alert('Chyba při mazání stránky');
+      }
     }
   };
 
-  const duplicatePage = (id: number) => {
-    const pageToClone = pages.find(page => page.id === id);
-    if (pageToClone) {
-      const newPage = {
-        ...pageToClone,
-        id: Date.now(),
-        name: `${pageToClone.name} (kopie)`,
-        status: 'draft' as const
-      };
-      setPages([...pages, newPage]);
+  const duplicatePage = async (id: number) => {
+    try {
+      const pageToClone = pages.find(page => page.id === id);
+      if (pageToClone) {
+        const response = await fetch('http://localhost:3001/api/landing-pages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ...pageToClone,
+            name: `${pageToClone.name} (kopie)`,
+            status: 'draft'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error('Chyba při duplikování stránky');
+        }
+
+        const newPage = await response.json();
+        setPages([...pages, newPage]);
+      }
+    } catch (error) {
+      console.error('Error duplicating landing page:', error);
+      alert('Chyba při duplikování stránky');
     }
   };
 
@@ -86,7 +130,24 @@ const LandingPages: React.FC = () => {
         </div>
 
         <div className="bg-white shadow overflow-hidden sm:rounded-lg">
-          {pages.length === 0 ? (
+          {loading ? (
+            <div className="p-8 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className="text-gray-500">Načítám landing pages...</p>
+            </div>
+          ) : error ? (
+            <div className="p-8 text-center">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 text-red-500" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Chyba při načítání</h3>
+              <p className="text-gray-500 mb-4">{error}</p>
+              <button
+                onClick={fetchPages}
+                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Zkusit znovu
+              </button>
+            </div>
+          ) : pages.length === 0 ? (
             <div className="p-8 text-center">
               <Globe className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Žádné landing pages</h3>
@@ -159,18 +220,21 @@ const LandingPages: React.FC = () => {
                         <button
                           onClick={() => window.open(page.url, '_blank')}
                           className="text-gray-400 hover:text-gray-500"
+                          title="Zobrazit stránku"
                         >
                           <Eye className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => duplicatePage(page.id)}
                           className="text-gray-400 hover:text-gray-500"
+                          title="Duplikovat"
                         >
                           <Copy className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => deletePage(page.id)}
                           className="text-red-400 hover:text-red-500"
+                          title="Smazat"
                         >
                           <Trash2 className="w-5 h-5" />
                         </button>
