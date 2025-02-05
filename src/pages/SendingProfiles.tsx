@@ -28,12 +28,12 @@ const SendingProfiles: React.FC = () => {
   id: 0,
   profileName: 'Local SMTP',
   interfaceType: 'SMTP',
-  smtpFrom: 'david.krcmarik@pslib.cz', // email který chcete "spoofnout"
-  host: '192.168.1.14',  // nebo IP adresa vašeho počítače
-  port: 25,          // port který jste nastavili
-  username: 'phishing-admin@test.local',  // uživatel z hMailServeru
-  password: 'admin',     // heslo z hMailServeru
-  useTLS: false,     // vypnuto protože používáme port 25
+  smtpFrom: 'pslibedu@pslib-edu.cz', // email který chcete "spoofnout"
+  host: 'smtp-relay.brevo.com',  // nebo IP adresa vašeho počítače
+  port: 587,          // port který jste nastavili
+  username: '8500a4001@smtp-brevo.com',  // uživatel z hMailServeru
+  password: 'tFRyaxMdQc21ZNbL',     // heslo z hMailServeru
+  useTLS: true,     // vypnuto protože používáme port 25
   headers: [
     { key: 'X-Custom-Header', value: '{{.URL}}-phish' }
   ],
