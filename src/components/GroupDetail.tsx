@@ -2,33 +2,15 @@ import React, { useState, useRef } from 'react';
 import { Users, Upload, Download, Search, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Papa from 'papaparse';
-
-interface Contact {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  position: string;
-  active: boolean;
-  dateAdded: string;
-}
-
-interface Group {
-  id: string;
-  name: string;
-  tags: string[];
-  contacts: Contact[];
-  lastModified: string;
-}
+import { Group, Contact } from '../types/group';
 
 interface GroupDetailProps {
-  onSave: (group: Group) => void;
+  onSave: (group: Group) => Promise<void>;
   initialGroup?: Group;
 }
 
 const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
   const [currentGroup, setCurrentGroup] = useState<Group>(initialGroup || {
-    id: '',
     name: '',
     tags: [],
     contacts: [],
@@ -176,7 +158,13 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
       return;
     }
 
-    onSave(currentGroup);
+    // Převedeme group do správného formátu pro MongoDB
+    const groupToSave = {
+      ...currentGroup,
+      _id: currentGroup._id  // Zachováme MongoDB ID pokud existuje
+    };
+    
+    onSave(groupToSave);
   };
 
   const filteredContacts = currentGroup.contacts.filter(contact => {

@@ -1,3 +1,5 @@
+// backend/src/models/campaign.model.ts
+
 import mongoose from 'mongoose';
 
 const campaignSchema = new mongoose.Schema({

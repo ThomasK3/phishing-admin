@@ -1,10 +1,9 @@
-// src/pages/Campaigns.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Calendar, PlayCircle, CheckCircle, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 interface Campaign {
-  id: number;
+  id: string;
   name: string;
   status: 'scheduled' | 'not_started' | 'in_progress' | 'completed';
   emailTemplate: string;
@@ -22,27 +21,30 @@ interface Campaign {
 }
 
 const CampaignList: React.FC = () => {
-  // Mockovaná data pro ukázku
-  const campaigns: Campaign[] = [
-    {
-      id: 1,
-      name: "Jarní bezpečnostní test 2024",
-      status: "scheduled",
-      emailTemplate: "Reset hesla",
-      landingPage: "Office 365 Login",
-      launchDate: "2024-03-15",
-      sendUntil: "2024-03-20",
-      targetGroups: ["IT Oddělení", "Marketing"],
-      stats: {
-        total: 150,
-        sent: 0,
-        opened: 0,
-        clicked: 0,
-        submitted: 0
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const response = await fetch('http://localhost:3001/api/campaigns');
+        if (!response.ok) {
+          throw new Error('Failed to fetch campaigns');
+        }
+        const data = await response.json();
+        console.log('Fetched campaigns:', data); // Pro debugging
+        setCampaigns(data);
+      } catch (error) {
+        console.error('Error fetching campaigns:', error);
+        setError('Nepodařilo se načíst kampaně');
+      } finally {
+        setLoading(false);
       }
-    },
-    // Další kampaně...
-  ];
+    };
+
+    fetchCampaigns();
+  }, []);
 
   const getStatusBadge = (status: Campaign['status']) => {
     const badges = {

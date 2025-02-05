@@ -21,31 +21,48 @@ export const campaignController = {
     }
   },
 
+
   create: async (req: Request, res: Response) => {
     try {
       const campaign = new Campaign(req.body);
       await campaign.save();
-      res.status(201).json(campaign);
+      res.status(201).json({ 
+        message: 'Kampaň byla úspěšně vytvořena',
+        campaign 
+      });
     } catch (error) {
-      res.status(400).json({ error: 'Error creating campaign' });
+      res.status(400).json({ error: 'Chyba při vytváření kampaně' });
     }
   },
 
   update: async (req: Request, res: Response) => {
     try {
-      const campaign = await Campaign.findByIdAndUpdate(req.params.id, req.body, { new: true });
-      res.json(campaign);
+      const campaign = await Campaign.findByIdAndUpdate(
+        req.params.id,
+        { ...req.body, updatedAt: new Date() },
+        { new: true }
+      );
+      if (!campaign) {
+        return res.status(404).json({ error: 'Kampaň nenalezena' });
+      }
+      res.json({ 
+        message: 'Kampaň byla úspěšně aktualizována',
+        campaign 
+      });
     } catch (error) {
-      res.status(400).json({ error: 'Error updating campaign' });
+      res.status(400).json({ error: 'Chyba při aktualizaci kampaně' });
     }
   },
 
   delete: async (req: Request, res: Response) => {
     try {
-      await Campaign.findByIdAndDelete(req.params.id);
-      res.status(204).send();
+      const campaign = await Campaign.findByIdAndDelete(req.params.id);
+      if (!campaign) {
+        return res.status(404).json({ error: 'Kampaň nenalezena' });
+      }
+      res.json({ message: 'Kampaň byla úspěšně smazána' });
     } catch (error) {
-      res.status(500).json({ error: 'Error deleting campaign' });
+      res.status(500).json({ error: 'Chyba při mazání kampaně' });
     }
   }
 };
