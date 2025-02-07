@@ -115,14 +115,75 @@ export const sendingProfileController = {
       }
   
       const sendSmtpEmail = {
-        sender: { 
-          name: profile.profileName, // jméno odesílatele
-          email: profile.smtpFrom   // email odesílatele
+        sender: {
+          name: "PSLib-EDU",
+          email: "pslibedu@pslib-edu.cz"  // Sjednotit s envelope from
         },
         to: [{ email: testEmailTo }],
-        subject: 'Test konfigurace',
-        htmlContent: '<b>Toto je testovací email pro ověření funkčnosti.</b>',
-        headers: Object.fromEntries(profile.headers.map(h => [h.key, h.value]))
+        subject: "PSLib-EDU - Aktivace přístupu",
+        textContent: `Dobrý den,
+      
+      byl Vám vytvořen přístup do nového vzdělávacího portálu PSLib-EDU. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:
+      
+      - Kompletní studijní materiály pro vaše předměty
+      - Zpracovaná témata a prezentace z výuky
+      - Příprava na praktická cvičení
+      - Studijní podklady k maturitě
+      - Digitální knihovna studijních materiálů
+      - Přehledné uspořádání podle předmětů a ročníků
+      
+      Pro aktivaci vašeho účtu a přístup k materiálům navštivte:
+      [odkaz]
+      
+      Doporučujeme aktivovat přístup co nejdříve, abyste měli všechny materiály k dispozici před začátkem nového pololetí.
+      
+      V případě dotazů nebo problémů s přístupem nás můžete kontaktovat na této emailové adrese.
+      
+      PSLib-EDU
+      Systém pro podporu výuky`,
+        htmlContent: `<!DOCTYPE html>
+      <html lang="cs">
+      <head>
+          <meta charset="UTF-8">
+          <title>PSLib-EDU - Aktivace přístupu</title>
+      </head>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
+          <div style="max-width: 600px; margin: 0 auto;">
+              <p>Dobrý den,</p>
+      
+              <p>byl Vám vytvořen přístup do nového vzdělávacího portálu <strong>PSLib-EDU</strong>. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:</p>
+      
+              <ul style="padding-left: 20px;">
+                  <li><strong>Kompletní studijní materiály</strong> pro vaše předměty</li>
+                  <li>Zpracovaná témata a prezentace z výuky</li>
+                  <li>Příprava na praktická cvičení</li>
+                  <li><strong>Studijní podklady k maturitě</strong></li>
+                  <li>Digitální knihovna studijních materiálů</li>
+                  <li>Přehledné uspořádání podle předmětů a ročníků</li>
+              </ul>
+      
+              <p>Pro aktivaci vašeho účtu a přístup k materiálům klikněte 
+                  <a href="#" style="color: #0066cc; font-weight: bold; text-decoration: underline;">ZDE</a>
+              </p>
+      
+              <p>Doporučujeme aktivovat přístup co nejdříve, abyste měli všechny materiály k dispozici před začátkem nového pololetí.</p>
+      
+              <p>V případě dotazů nebo problémů s přístupem nás můžete kontaktovat na této emailové adrese.</p>
+      
+              <p style="margin-top: 30px;">
+                  PSLib-EDU<br>
+                  Systém pro podporu výuky
+              </p>
+          </div>
+          <img width="1" height="1" alt="" src="..." style="display:none;" />
+      </body>
+      </html>`,
+        headers: {
+          "List-Unsubscribe": "<mailto:unsubscribe@pslib-edu.cz>",
+          "X-Mailer": "PSLib-EDU System 1.0",
+          "Precedence": "bulk",
+          "Message-ID": `<${Date.now()}.${Math.random().toString(36).substring(2)}@pslib-edu.cz>`
+        }
       };
   
       const result = await emailApi.sendTransacEmail(sendSmtpEmail);

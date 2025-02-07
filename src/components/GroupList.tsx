@@ -1,20 +1,36 @@
-import React from 'react';
-import { Users, Plus, Tag, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Plus, Tag, ChevronRight, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-interface Group {
-  id: string;
-  name: string;
-  tags: string[];
-  contacts: any[];
-  lastModified: string;
-}
+import { Group } from '../types/group';
+import { api } from '../services/api';
 
 interface GroupListProps {
   groups: Group[];
+  onGroupDeleted?: () => void;
 }
 
-const GroupList: React.FC<GroupListProps> = ({ groups }) => {
+const GroupList: React.FC<GroupListProps> = ({ groups, onGroupDeleted }) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteGroup = async (id: string) => {
+    if (!window.confirm('Opravdu chcete smazat tuto skupinu? Tato akce je nevratná.')) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      await api.deleteGroup(id);
+      if (onGroupDeleted) {
+        onGroupDeleted();
+      }
+    } catch (error) {
+      console.error('Chyba při mazání skupiny:', error);
+      alert('Nepodařilo se smazat skupinu');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
@@ -48,21 +64,20 @@ const GroupList: React.FC<GroupListProps> = ({ groups }) => {
         ) : (
           <div className="divide-y">
             {groups.map(group => (
-              <Link 
-                key={group.id}
-                to={`/groups/${group.id}`}
-                className="block p-6 hover:bg-gray-50"
-              >
-                <div className="flex justify-between items-start">
+              <div key={group.id} className="p-6 hover:bg-gray-50 flex justify-between items-start">
+                <Link 
+                  to={`/groups/${group.id}`}
+                  className="flex-1"
+                >
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-1">{group.name}</h3>
                     <div className="flex items-center text-sm text-gray-500 mb-2">
                       <Users className="w-4 h-4 mr-1" />
-                      {group.contacts.length} kontaktů
+                      {group.contacts?.length || 0} kontaktů
                       <span className="mx-2">•</span>
                       Upraveno {new Date(group.lastModified).toLocaleDateString()}
                     </div>
-                    {group.tags.length > 0 && (
+                    {group.tags && group.tags.length > 0 && (
                       <div className="flex flex-wrap gap-2">
                         {group.tags.map(tag => (
                           <span 
@@ -76,9 +91,19 @@ const GroupList: React.FC<GroupListProps> = ({ groups }) => {
                       </div>
                     )}
                   </div>
+                </Link>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handleDeleteGroup(group.id)}
+                    disabled={isDeleting}
+                    className="p-2 text-red-500 hover:text-red-700 disabled:opacity-50"
+                    title="Smazat skupinu"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
                   <ChevronRight className="w-5 h-5 text-gray-400" />
                 </div>
-              </Link>
+              </div>
             ))}
           </div>
         )}

@@ -1,8 +1,11 @@
-import React, { useState, useRef } from 'react';
+// src/components/GroupDetail.tsx - první řádek
+import React, { useState, useRef, useEffect } from 'react';
 import { Users, Upload, Download, Search, Plus, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Papa from 'papaparse';
 import { Group, Contact } from '../types/group';
+import { api } from '../services/api';
+
 
 interface GroupDetailProps {
   onSave: (group: Group) => Promise<void>;
@@ -11,11 +14,19 @@ interface GroupDetailProps {
 
 const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
   const [currentGroup, setCurrentGroup] = useState<Group>(initialGroup || {
+    id: Math.random().toString(36).substr(2, 9), // přidáme povinné id
     name: '',
     tags: [],
     contacts: [],
     lastModified: new Date().toISOString()
   });
+
+  useEffect(() => {
+    if (initialGroup) {
+      setCurrentGroup(initialGroup);
+    }
+  }, [initialGroup]);
+
   const [newContact, setNewContact] = useState<Partial<Contact>>({});
   const [newTag, setNewTag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -123,12 +134,28 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
     setNewContact({});
   };
 
-  const removeContact = (id: string) => {
-    setCurrentGroup({
-      ...currentGroup,
-      contacts: currentGroup.contacts.filter(c => c.id !== id),
-      lastModified: new Date().toISOString()
-    });
+  const removeContact = async (id: string) => {
+    if (!window.confirm('Opravdu chcete smazat tento kontakt?')) {
+      return;
+    }
+  
+    try {
+      const updatedContacts = currentGroup.contacts.filter(c => c.id !== id);
+      const updatedGroup = {
+        ...currentGroup,
+        contacts: updatedContacts,
+        lastModified: new Date().toISOString()
+      };
+  
+      if (currentGroup._id) {
+        await api.updateGroupContact(currentGroup._id, updatedContacts);
+      }
+      
+      setCurrentGroup(updatedGroup);
+    } catch (error) {
+      console.error('Chyba při mazání kontaktu:', error);
+      alert('Nepodařilo se smazat kontakt');
+    }
   };
 
   const addTag = () => {

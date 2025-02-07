@@ -1,9 +1,8 @@
-// src/services/api.ts
+import { Contact, Group } from '../types/group';
 
 const API_BASE = 'http://localhost:3001/api';
 
 export const api = {
-
     // Kampaně
     async getCampaigns() {
       const response = await fetch(`${API_BASE}/campaigns`);
@@ -65,10 +64,34 @@ export const api = {
     return response.json();
   },
 
-  async getGroupById(id: string) {
+  async updateGroupContact(groupId: string, contacts: Contact[]) {
+    const response = await fetch(`${API_BASE}/groups/${groupId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ contacts }),
+    });
+    if (!response.ok) {
+      throw new Error('Failed to update group contacts');
+    }
+    return response.json();
+  },
+
+  getGroupById: async (id: string) => {
     const response = await fetch(`${API_BASE}/groups/${id}`);
     if (!response.ok) {
       throw new Error('Failed to fetch group');
+    }
+    return response.json();
+  },
+
+  deleteGroup: async (id: string) => {
+    const response = await fetch(`${API_BASE}/groups/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) {
+      throw new Error('Failed to delete group');
     }
     return response.json();
   },
