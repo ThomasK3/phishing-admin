@@ -115,9 +115,9 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
       alert('Prosím zadejte platnou emailovou adresu');
       return;
     }
-
+  
     const contact: Contact = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).substr(2, 9),  // zajistíme unikátní ID
       firstName: newContact.firstName || '',
       lastName: newContact.lastName || '',
       email: newContact.email,
@@ -140,15 +140,16 @@ const GroupDetail: React.FC<GroupDetailProps> = ({ onSave, initialGroup }) => {
     }
   
     try {
-      const updatedContacts = currentGroup.contacts.filter(c => c.id !== id);
+      // Vytvoříme novou skupinu s aktualizovanými kontakty
       const updatedGroup = {
         ...currentGroup,
-        contacts: updatedContacts,
+        contacts: currentGroup.contacts.filter(c => c.id !== id),
         lastModified: new Date().toISOString()
       };
   
       if (currentGroup._id) {
-        await api.updateGroupContact(currentGroup._id, updatedContacts);
+        // Uložíme celou skupinu s aktualizovanými kontakty
+        await api.updateGroup(currentGroup._id, updatedGroup);
       }
       
       setCurrentGroup(updatedGroup);

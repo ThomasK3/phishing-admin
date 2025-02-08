@@ -3,23 +3,23 @@ import { Mail, Save, Trash2, TestTube, Shield, AlertCircle, Send } from 'lucide-
 import { api } from '../services/api';
 
 interface SendingProfile {
- _id?: string;
- id: number;  
- profileName: string;
- interfaceType: 'SMTP';
- smtpFrom: string;
- host: string;
- port: number;
- username: string;
- password: string;
- useTLS: boolean;
- headers: {
-   key: string;
-   value: string;
- }[];
- replyToAddress: string;
- spoofedDomain: string;
- customBoundary: string;
+  id: number;
+  _id?: string;  // MongoDB ID
+  profileName: string;
+  interfaceType: 'SMTP';
+  smtpFrom: string;
+  host: string;
+  port: number;
+  username: string;
+  password: string;
+  useTLS: boolean;
+  headers: {
+    key: string;
+    value: string;
+  }[];
+  replyToAddress: string;
+  spoofedDomain: string;
+  customBoundary: string;
 }
 
 const SendingProfiles: React.FC = () => {
@@ -141,19 +141,19 @@ const SendingProfiles: React.FC = () => {
    }
  };
 
- const deleteProfile = async (id: number) => {
-   if (!window.confirm('Opravdu chcete smazat tento profil?')) {
-     return;
-   }
+ const deleteProfile = async (id: number | string) => {
+  if (!window.confirm('Opravdu chcete smazat tento profil?')) {
+    return;
+  }
 
-   try {
-     await api.deleteSendingProfile(id.toString());
-     setProfiles(profiles.filter(profile => profile.id !== id));
-   } catch (error) {
-     console.error('Chyba při mazání profilu:', error);
-     alert('Nepodařilo se smazat profil');
-   }
- };
+  try {
+    await api.deleteSendingProfile(id.toString());
+    setProfiles(profiles.filter(profile => profile.id !== id));
+  } catch (error) {
+    console.error('Chyba při mazání profilu:', error);
+    alert('Nepodařilo se smazat profil');
+  }
+};
 
  return (
    <div className="max-w-6xl mx-auto p-6">
@@ -369,11 +369,11 @@ const SendingProfiles: React.FC = () => {
                    <Send className="w-4 h-4" />
                  </button>
                  <button
-                   onClick={() => deleteProfile(profile.id)}
-                   className="p-2 text-red-500 hover:text-red-700"
-                 >
-                   <Trash2 className="w-4 h-4" />
-                 </button>
+                  onClick={() => deleteProfile(profile.id)}
+                  className="p-2 text-red-500 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
                </div>
              </div>
            </div>
