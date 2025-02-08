@@ -1,6 +1,6 @@
 // src/components/EmailTemplateEditor.tsx
 import React, { useState, useEffect } from 'react';
-import { Mail, Save, Trash2, Eye, Upload, Image, FileText, Code, Clock, Globe, AlertCircle } from 'lucide-react';
+import { Mail, Save, Trash2, Eye, Upload, FileText, Code, Globe, AlertCircle } from 'lucide-react';
 import EmailImportDialog from './EmailImportDialog';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
@@ -9,19 +9,13 @@ import { api } from '../services/api';
 interface EmailTemplate {
   id: number;
   internalName: string;
-  envelopeSender: string;
   displayName: string;
-  replyTo: string;
   subject: string;
   content: string;
   isHTML: boolean;
-  hasTrackingPixel: boolean;
   attachments: File[];
   priority: 'normal' | 'high' | 'low';
   language: 'cs' | 'en';
-  scheduledTime: string;
-  includeFakeForward: boolean;
-  fakeForwardFrom: string;
 }
 
 const EmailTemplateEditor: React.FC = () => {
@@ -32,19 +26,13 @@ const EmailTemplateEditor: React.FC = () => {
   const [currentTemplate, setCurrentTemplate] = useState<EmailTemplate>({
     id: 0,
     internalName: '',
-    envelopeSender: '',
     displayName: '',
-    replyTo: '',
     subject: '',
     content: '',
     isHTML: false,
-    hasTrackingPixel: false,
     attachments: [],
     priority: 'normal',
     language: 'cs',
-    scheduledTime: '',
-    includeFakeForward: false,
-    fakeForwardFrom: ''
   });
 
   // Načtení šablon při prvním renderu
@@ -108,19 +96,13 @@ const EmailTemplateEditor: React.FC = () => {
       setCurrentTemplate({
         id: 0,
         internalName: '',
-        envelopeSender: '',
         displayName: '',
-        replyTo: '',
         subject: '',
         content: '',
         isHTML: false,
-        hasTrackingPixel: false,
         attachments: [],
         priority: 'normal',
         language: 'cs',
-        scheduledTime: '',
-        includeFakeForward: false,
-        fakeForwardFrom: ''
       });
     } catch (error) {
       console.error('Chyba při ukládání šablony:', error);
@@ -142,9 +124,7 @@ const EmailTemplateEditor: React.FC = () => {
     setCurrentTemplate({
       ...currentTemplate,
       subject: parsedEmail.subject,
-      envelopeSender: parsedEmail.envelopeSender,
       displayName: parsedEmail.displayName,
-      replyTo: parsedEmail.replyTo,
       content: parsedEmail.content,
       isHTML: parsedEmail.isHTML,
       priority: parsedEmail.priority,
@@ -191,41 +171,8 @@ const EmailTemplateEditor: React.FC = () => {
                 placeholder="Např. Jarní kampaň 2024"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Envelope Sender</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                value={currentTemplate.envelopeSender}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, envelopeSender: e.target.value})}
-                placeholder="Např. info@spolecnost.cz"
-              />
-            </div>
           </div>
-
-          {/* Pokročilé nastavení odesílatele */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">Zobrazované jméno odesílatele</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                value={currentTemplate.displayName}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, displayName: e.target.value})}
-                placeholder="Např. IT Podpora"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-2">Reply-To adresa</label>
-              <input
-                type="text"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                value={currentTemplate.replyTo}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, replyTo: e.target.value})}
-                placeholder="Např. support@spolecnost.cz"
-              />
-            </div>
-          </div>
+            
 
           {/* Nastavení předmětu a priority */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
@@ -261,39 +208,6 @@ const EmailTemplateEditor: React.FC = () => {
                 <option value="en">Angličtina</option>
               </select>
             </div>
-          </div>
-
-          {/* Časování doručení */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">Naplánovat doručení</label>
-            <input
-              type="datetime-local"
-              className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-              value={currentTemplate.scheduledTime}
-              onChange={(e) => setCurrentTemplate({...currentTemplate, scheduledTime: e.target.value})}
-            />
-          </div>
-
-          {/* Falešné přeposlání */}
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={currentTemplate.includeFakeForward}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, includeFakeForward: e.target.checked})}
-              />
-              <label className="text-sm font-medium">Přidat falešnou hlavičku přeposlání</label>
-            </div>
-            {currentTemplate.includeFakeForward && (
-              <input
-                type="text"
-                className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500"
-                value={currentTemplate.fakeForwardFrom}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, fakeForwardFrom: e.target.value})}
-                placeholder="Původní odesílatel (např. external@company.com)"
-              />
-            )}
           </div>
 
           {/* Přepínač HTML/Text */}
@@ -342,18 +256,6 @@ const EmailTemplateEditor: React.FC = () => {
 
           {/* Tracking pixel a přílohy */}
           <div className="mb-4 space-y-4">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                className="mr-2"
-                checked={currentTemplate.hasTrackingPixel}
-                onChange={(e) => setCurrentTemplate({...currentTemplate, hasTrackingPixel: e.target.checked})}
-              />
-              <label className="text-sm font-medium flex items-center">
-                <Image className="w-4 h-4 mr-2" />
-                Přidat trakovací obrázek
-              </label>
-            </div>
 
             <div>
               <label className="block text-sm font-medium mb-2">Přílohy</label>
@@ -417,7 +319,7 @@ const EmailTemplateEditor: React.FC = () => {
                 <div>
                   <h3 className="font-medium">{template.internalName}</h3>
                   <p className="text-sm text-gray-600">
-                    {template.displayName} &lt;{template.envelopeSender}&gt;
+                    {template.displayName} &lt;
                   </p>
                   <p className="text-sm text-gray-600">{template.subject}</p>
                   <div className="flex space-x-4 mt-1">
@@ -431,18 +333,6 @@ const EmailTemplateEditor: React.FC = () => {
                       <Globe className="w-3 h-3 inline mr-1" />
                       {template.language === 'cs' ? 'Čeština' : 'Angličtina'}
                     </span>
-                    {template.scheduledTime && (
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        <Clock className="w-3 h-3 inline mr-1" />
-                        Naplánováno na {new Date(template.scheduledTime).toLocaleString()}
-                      </span>
-                    )}
-                    {template.hasTrackingPixel && (
-                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">
-                        <Image className="w-3 h-3 inline mr-1" />
-                        Tracking
-                      </span>
-                    )}
                   </div>
                 </div>
                 <div className="flex space-x-2">
@@ -463,12 +353,6 @@ const EmailTemplateEditor: React.FC = () => {
               {previewMode && (
                 <div className="mt-2 p-2 bg-gray-50 rounded">
                   <div className="text-sm">
-                    {template.includeFakeForward && (
-                      <div className="text-xs text-gray-500 mb-2 border-b pb-2">
-                        <p>-------- Přeposlaná zpráva --------</p>
-                        <p>Od: {template.fakeForwardFrom}</p>
-                      </div>
-                    )}
                     <div className={template.isHTML ? 'font-mono' : ''}>
                       {template.content}
                     </div>
