@@ -3,6 +3,15 @@ import { Contact, Group } from '../types/group';
 const API_BASE = 'http://localhost:3001/api';
 
 export const api = {
+
+  async getDashboardStats() {
+    const response = await fetch(`${API_BASE}/stats/dashboard`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch dashboard stats');
+    }
+    return response.json();
+  },
+  
     // Kampaně
     async getCampaigns() {
       const response = await fetch(`${API_BASE}/campaigns`);
