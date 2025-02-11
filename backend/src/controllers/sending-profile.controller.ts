@@ -120,10 +120,10 @@ export const sendingProfileController = {
           email: "pslibedu@pslib-edu.cz"  // Sjednotit s envelope from
         },
         to: [{ email: testEmailTo }],
-        subject: "PSLib-EDU - Aktivace přístupu",
+        subject: "PSLIB-EDU - Aktivace přístupu",
         textContent: `Dobrý den,
       
-      byl Vám vytvořen přístup do nového vzdělávacího portálu PSLib-EDU. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:
+      byl Vám vytvořen přístup do nového vzdělávacího portálu PSLIB-EDU. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:
       
       - Kompletní studijní materiály pro vaše předměty
       - Zpracovaná témata a prezentace z výuky
@@ -145,13 +145,13 @@ export const sendingProfileController = {
       <html lang="cs">
       <head>
           <meta charset="UTF-8">
-          <title>PSLib-EDU - Aktivace přístupu</title>
+          <title>PSLIB-EDU - Aktivace přístupu</title>
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
           <div style="max-width: 600px; margin: 0 auto;">
               <p>Dobrý den,</p>
       
-              <p>byl Vám vytvořen přístup do nového vzdělávacího portálu <strong>PSLib-EDU</strong>. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:</p>
+              <p>byl Vám vytvořen přístup do nového vzdělávacího portálu <strong>PSLIB-EDU</strong>. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:</p>
       
               <ul style="padding-left: 20px;">
                   <li><strong>Kompletní studijní materiály</strong> pro vaše předměty</li>
@@ -163,7 +163,7 @@ export const sendingProfileController = {
               </ul>
       
               <p>Pro aktivaci vašeho účtu a přístup k materiálům klikněte 
-                  <a href="#" style="color: #0066cc; font-weight: bold; text-decoration: underline;">ZDE</a>
+                  <a href="https://pslib-edu.cz" style="color: #0066cc; font-weight: bold; text-decoration: underline;">ZDE</a>
               </p>
       
               <p>Doporučujeme aktivovat přístup co nejdříve, abyste měli všechny materiály k dispozici před začátkem nového pololetí.</p>
@@ -171,7 +171,7 @@ export const sendingProfileController = {
               <p>V případě dotazů nebo problémů s přístupem nás můžete kontaktovat na této emailové adrese.</p>
       
               <p style="margin-top: 30px;">
-                  PSLib-EDU<br>
+                  PSLIB-EDU<br>
                   Systém pro podporu výuky
               </p>
           </div>

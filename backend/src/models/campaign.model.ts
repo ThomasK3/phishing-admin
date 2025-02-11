@@ -3,6 +3,7 @@
 import mongoose from 'mongoose';
 
 const campaignSchema = new mongoose.Schema({
+  brevoId: String,  // Přidáme pole pro Brevo ID
   name: { type: String, required: true },
   status: { 
     type: String, 

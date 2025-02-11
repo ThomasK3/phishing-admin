@@ -5,8 +5,10 @@ export const emailTemplateController = {
   async getAll(req: Request, res: Response) {
     try {
       const templates = await EmailTemplate.find();
+      console.log('Found templates:', templates);
       res.json(templates);
     } catch (error) {
+      console.error('Error loading templates:', error);
       res.status(500).json({ error: 'Chyba při načítání šablon' });
     }
   },

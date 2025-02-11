@@ -54,5 +54,30 @@ export const brevoService = {
       console.error('Error fetching email events:', error);
       throw error;
     }
+  },
+
+  async createCampaign(campaignData: any) {
+    try {
+      // Vytvoření emailCampaign objektu pro Brevo
+      const campaign = {
+        name: campaignData.name,
+        templateId: campaignData.emailTemplateId,
+        scheduledAt: campaignData.launchDate,
+        subject: campaignData.subject,
+        sender: { 
+          name: campaignData.sendingProfile.displayName,
+          email: campaignData.sendingProfile.smtpFrom
+        },
+        recipients: {
+          listIds: campaignData.targetGroups.map((group: any) => group.id)
+        }
+      };
+  
+      const response = await apiInstance.createEmailCampaign(campaign);
+      return response.body;
+    } catch (error) {
+      console.error('Error creating Brevo campaign:', error);
+      throw error;
+    }
   }
 };

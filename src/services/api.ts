@@ -111,7 +111,9 @@ export const api = {
     if (!response.ok) {
       throw new Error('Failed to fetch email templates');
     }
-    return response.json();
+    const data = await response.json();
+    console.log('API email templates response:', data);
+    return data;
   },
 
   async createEmailTemplate(data: any) {

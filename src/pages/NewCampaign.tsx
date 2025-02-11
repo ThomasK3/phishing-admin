@@ -1,8 +1,34 @@
+// src/pages/NewCampaign.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
-interface CampaignForm {
+interface EmailTemplate {
+  _id: string;
+  name: string;
+  subject: string;
+  content: string;
+}
+
+interface LandingPage {
+  _id: string;
+  name: string;
+  url: string;
+}
+
+interface SendingProfile {
+  _id: string;
+  profileName: string;
+  smtpFrom: string;
+}
+
+interface Group {
+  _id: string;
+  name: string;
+  contactCount: number;
+}
+
+interface CampaignFormData {
   name: string;
   emailTemplateId: string;
   landingPageId: string;
@@ -10,83 +36,126 @@ interface CampaignForm {
   targetGroups: string[];
   launchDate: string;
   sendUntil: string;
-  status: 'scheduled' | 'not_started' | 'in_progress' | 'completed';
 }
 
 const NewCampaign: React.FC = () => {
   const navigate = useNavigate();
-  
-  // States pro formulář
-  const [formData, setFormData] = useState<CampaignForm>({
+
+  // Formulářová data
+  const [formData, setFormData] = useState<CampaignFormData>({
     name: '',
     emailTemplateId: '',
     landingPageId: '',
     sendingProfileId: '',
     targetGroups: [],
     launchDate: '',
-    sendUntil: '',
-    status: 'scheduled'
+    sendUntil: ''
   });
 
-  // States pro načtené možnosti
-  const [emailTemplates, setEmailTemplates] = useState<any[]>([]);
-  const [landingPages, setLandingPages] = useState<any[]>([]);
-  const [sendingProfiles, setSendingProfiles] = useState<any[]>([]);
-  const [groups, setGroups] = useState<any[]>([]);
+  // Data pro výběry
+  const [availableTemplates, setAvailableTemplates] = useState<EmailTemplate[]>([]);
+  const [availablePages, setAvailablePages] = useState<LandingPage[]>([]);
+  const [availableProfiles, setAvailableProfiles] = useState<SendingProfile[]>([]);
+  const [availableGroups, setAvailableGroups] = useState<Group[]>([]);
+  
+  // UI stavy
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const [
-          templatesResponse,
-          pagesResponse,
-          profilesResponse,
-          groupsResponse
-        ] = await Promise.all([
-          api.getEmailTemplates(),
-          api.getLandingPages(),
-          api.getSendingProfiles(),
-          api.getGroups()
-        ]);
+// Na začátku useEffect pro načítání dat
+useEffect(() => {
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      console.log('Starting to load data...');
 
-        setEmailTemplates(templatesResponse);
-        setLandingPages(pagesResponse);
-        setSendingProfiles(profilesResponse);
-        setGroups(groupsResponse);
-        setLoading(false);
-      } catch (err) {
-        setError('Chyba při načítání dat');
-        setLoading(false);
-      }
-    };
+      const [
+        templatesRes,
+        pagesRes,
+        profilesRes,
+        groupsRes
+      ] = await Promise.all([
+        api.getEmailTemplates(),
+        api.getLandingPages(),
+        api.getSendingProfiles(),
+        api.getGroups()
+      ]);
 
-    loadData();
-  }, []);
+      console.log('Loaded data:', {
+        templates: templatesRes,
+        pages: pagesRes,
+        profiles: profilesRes,
+        groups: groupsRes
+      });
+
+      setAvailableTemplates(templatesRes.data || []);
+      setAvailablePages(pagesRes.data || []);
+      setAvailableProfiles(profilesRes.data || []);
+      setAvailableGroups(groupsRes.data || []);
+
+      console.log('State updated with:', {
+        templates: availableTemplates,
+        pages: availablePages,
+        profiles: availableProfiles,
+        groups: availableGroups
+      });
+
+    } catch (err) {
+      console.error('Error loading data:', err);
+      setError('Nepodařilo se načíst potřebná data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  loadData();
+}, []);
+
+  // Handler pro změnu input polí
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  // Handler pro multiple select skupin
+  const handleGroupsChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedGroups = Array.from(e.target.selectedOptions, option => option.value);
+    setFormData(prev => ({
+      ...prev,
+      targetGroups: selectedGroups
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     try {
-      // Vytvoření kampaně
-      const response = await fetch('http://localhost:3001/api/campaigns', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-      
-      if (!response.ok) {
-        throw new Error('Nepodařilo se vytvořit kampaň');
+      // Validace dat
+      if (!formData.name || !formData.emailTemplateId || !formData.landingPageId || 
+          !formData.sendingProfileId || formData.targetGroups.length === 0) {
+        setError('Prosím vyplňte všechny povinné údaje');
+        return;
       }
 
-      const data = await response.json();
-      alert(data.message); // Zobrazí hlášku o úspěchu
-      navigate('/campaigns');
-    } catch (error) {
-      console.error('Chyba při ukládání kampaně:', error);
-      alert('Nepodařilo se uložit kampaň');
+      // Sestavení dat pro kampaň - používáme přímo formData
+      const campaignData = {
+        ...formData,
+        status: 'scheduled'
+      };
+  
+      const response = await api.createCampaign(campaignData);
+      
+      if (response.data?._id) {
+        navigate(`/campaigns/${response.data._id}`);
+      } else {
+        throw new Error('Neplatná odpověď od serveru');
+      }
+    } catch (err) {
+      console.error('Error creating campaign:', err);
+      setError('Nepodařilo se vytvořit kampaň');
     }
   };
 
@@ -146,9 +215,9 @@ const NewCampaign: React.FC = () => {
                     required
                   >
                     <option value="">Vyberte šablonu emailu</option>
-                    {emailTemplates.map(template => (
+                    {availableTemplates.map((template: EmailTemplate) => (
                       <option key={template._id} value={template._id}>
-                        {template.internalName}
+                        {template.name}
                       </option>
                     ))}
                   </select>
@@ -165,7 +234,7 @@ const NewCampaign: React.FC = () => {
                     required
                   >
                     <option value="">Vyberte cílovou stránku</option>
-                    {landingPages.map(page => (
+                    {availablePages.map((page: LandingPage) => (
                       <option key={page._id} value={page._id}>
                         {page.name}
                       </option>
@@ -190,7 +259,7 @@ const NewCampaign: React.FC = () => {
                     required
                   >
                     <option value="">Vyberte profil odesílatele</option>
-                    {sendingProfiles.map(profile => (
+                    {availableProfiles.map((profile: SendingProfile) => (
                       <option key={profile._id} value={profile._id}>
                         {profile.profileName}
                       </option>
@@ -212,9 +281,9 @@ const NewCampaign: React.FC = () => {
                     })}
                     required
                   >
-                    {groups.map(group => (
+                    {availableGroups.map((group: Group) => (
                       <option key={group._id} value={group._id}>
-                        {group.name} ({group.contacts?.length || 0} kontaktů)
+                        {group.name} ({group.contactCount} kontaktů)
                       </option>
                     ))}
                   </select>
