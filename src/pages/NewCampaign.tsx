@@ -5,7 +5,8 @@ import { api } from '../services/api';
 
 interface EmailTemplate {
   _id: string;
-  name: string;
+  name?: string;
+  internalName?: string;
   subject: string;
   content: string;
 }
@@ -62,54 +63,48 @@ const NewCampaign: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-// Na začátku useEffect pro načítání dat
-useEffect(() => {
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      console.log('Starting to load data...');
-
-      const [
-        templatesRes,
-        pagesRes,
-        profilesRes,
-        groupsRes
-      ] = await Promise.all([
-        api.getEmailTemplates(),
-        api.getLandingPages(),
-        api.getSendingProfiles(),
-        api.getGroups()
-      ]);
-
-      console.log('Loaded data:', {
-        templates: templatesRes,
-        pages: pagesRes,
-        profiles: profilesRes,
-        groups: groupsRes
-      });
-
-      setAvailableTemplates(templatesRes.data || []);
-      setAvailablePages(pagesRes.data || []);
-      setAvailableProfiles(profilesRes.data || []);
-      setAvailableGroups(groupsRes.data || []);
-
-      console.log('State updated with:', {
-        templates: availableTemplates,
-        pages: availablePages,
-        profiles: availableProfiles,
-        groups: availableGroups
-      });
-
-    } catch (err) {
-      console.error('Error loading data:', err);
-      setError('Nepodařilo se načíst potřebná data');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  loadData();
-}, []);
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        // Získání dat z API
+        const [
+          templatesRes,
+          pagesRes,
+          profilesRes,
+          groupsRes
+        ] = await Promise.all([
+          api.getEmailTemplates(),
+          api.getLandingPages(),
+          api.getSendingProfiles(),
+          api.getGroups()
+        ]);
+  
+        // Přímé nastavení dat bez přístupu k .data property
+        setAvailableTemplates(templatesRes || []);
+        setAvailablePages(pagesRes || []);
+        setAvailableProfiles(profilesRes || []);
+        setAvailableGroups(groupsRes || []);
+  
+        // Debug log pro kontrolu dat
+        console.log('Loaded data:', {
+          templates: templatesRes,
+          pages: pagesRes,
+          profiles: profilesRes,
+          groups: groupsRes
+        });
+  
+      } catch (err) {
+        console.error('Error loading data:', err);
+        setError('Nepodařilo se načíst potřebná data');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    loadData();
+  }, []);
 
   // Handler pro změnu input polí
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -217,7 +212,7 @@ useEffect(() => {
                     <option value="">Vyberte šablonu emailu</option>
                     {availableTemplates.map((template: EmailTemplate) => (
                       <option key={template._id} value={template._id}>
-                        {template.name}
+                        {template.internalName || template.name || `Šablona ${template._id}`}
                       </option>
                     ))}
                   </select>
