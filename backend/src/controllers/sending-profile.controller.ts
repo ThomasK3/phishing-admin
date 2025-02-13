@@ -120,7 +120,7 @@ export const sendingProfileController = {
           email: "pslibedu@pslib-edu.cz"  // Sjednotit s envelope from
         },
         to: [{ email: testEmailTo }],
-        subject: "PSLIB-EDU - Aktivace přístupu",
+        subject: "TESTOVACÍ EMAIL",
         textContent: `Dobrý den,
       
       byl Vám vytvořen přístup do nového vzdělávacího portálu PSLIB-EDU. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:
@@ -149,6 +149,7 @@ export const sendingProfileController = {
       </head>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333333;">
           <div style="max-width: 600px; margin: 0 auto;">
+              <h1>JEDNA SE POUZE O TESTOVACÍ EMAIL ROZESÍLAJÍCÍHO SERVERU</h1>
               <p>Dobrý den,</p>
       
               <p>byl Vám vytvořen přístup do nového vzdělávacího portálu <strong>PSLIB-EDU</strong>. Tento portál je součástí modernizace výukových nástrojů naší školy a obsahuje:</p>

@@ -6,8 +6,16 @@ const emailTemplateSchema = new mongoose.Schema({
   displayName: String,
   replyTo: String,
   subject: { type: String, required: true },
-  content: { type: String, required: true },
-  isHTML: { type: Boolean, default: false },
+  content: { 
+    type: String, 
+    required: true,
+    // Zvětšíme max velikost pro HTML obsah
+    maxLength: 100000  // Nastavíme větší limit pro HTML
+  },
+  isHTML: { 
+    type: Boolean, 
+    default: true  // Změníme default na true
+  },
   hasTrackingPixel: { type: Boolean, default: false },
   priority: { 
     type: String,

@@ -1,7 +1,11 @@
 // backend/src/controllers/campaign.controller.ts
 import { Request, Response } from 'express';
 import { Campaign } from '../models/campaign.model';
+import { EmailTemplate } from '../models/email-template';
+import { SendingProfile } from '../models/sending-profile.model';
+import { Group } from '../models/group.model';
 import { brevoService } from '../services/brevo.service';
+import mongoose from 'mongoose';
 
 export const campaignController = {
   // Získat všechny kampaně
@@ -36,44 +40,127 @@ export const campaignController = {
 
   // Vytvořit novou kampaň
   create: async (req: Request, res: Response) => {
+    let campaignId: string | null = null;
     try {
-      // Vytvoření kampaně v MongoDB
-      const campaign = new Campaign(req.body);
-      await campaign.save();
-  
-      // Pokus o vytvoření kampaně v Brevo
-      try {
-        const brevoCampaign = await brevoService.createCampaign({
-          ...req.body,
-          id: campaign._id.toString()
-        });
-  
-        // Ověření, zda brevoCampaign obsahuje id
-        if (!brevoCampaign || !('id' in brevoCampaign)) {
-          throw new Error('Brevo campaign response does not contain an ID');
-        }
-  
-        // Uložení Brevo ID do MongoDB
-        await Campaign.findByIdAndUpdate(campaign._id, { 
-          brevoId: brevoCampaign.id as string, // Explicitní přetypování na string
-          status: 'scheduled'  
-        });
-  
-        const populatedCampaign = await Campaign.findById(campaign._id)
-          .populate('emailTemplateId')
-          .populate('landingPageId')
-          .populate('targetGroups');
-  
-        res.status(201).json(populatedCampaign);
-      } catch (brevoError) {
-        // Pokud se nepodaří vytvořit kampaň v Brevo, smažeme ji i z MongoDB
-        await Campaign.findByIdAndDelete(campaign._id);
-        console.error('Error creating Brevo campaign:', brevoError);
-        throw brevoError;
+      // Načtení šablony emailu
+      const emailTemplate = await EmailTemplate.findById(req.body.emailTemplateId);
+      if (!emailTemplate) {
+        return res.status(400).json({ error: 'Email template not found' });
       }
-    } catch (error) {
-      console.error('Error creating campaign:', error);
-      res.status(400).json({ error: 'Nepodařilo se vytvořit kampaň' });
+
+      // Načtení sending profile
+      const sendingProfile = await SendingProfile.findById(req.body.sendingProfileId);
+      if (!sendingProfile) {
+        return res.status(400).json({ error: 'Sending profile not found' });
+      }
+
+      // Kontrola cílových skupin
+      const targetGroups = await Group.find({
+        _id: { $in: req.body.targetGroups }
+      }).populate('contacts');
+      
+      // Agregace všech kontaktů ze skupin
+      const allContacts = targetGroups.flatMap(group => group.contacts || []);
+      
+      console.log('Detailed contact info:', allContacts.map(contact => ({
+        email: contact.email,
+        id: contact.id,
+        active: contact.active
+      })));
+      
+      // Filtrování aktivních kontaktů
+      const activeContacts = allContacts.filter(contact => contact.active);
+      
+      if (activeContacts.length === 0) {
+        return res.status(400).json({ 
+          error: 'Nebyly nalezeny žádné aktivní kontakty ve vybraných skupinách',
+          details: {
+            selectedGroups: req.body.targetGroups,
+            foundGroups: targetGroups.length,
+            totalContacts: allContacts.length
+          }
+        });
+      }
+      
+      // Příprava dat pro Brevo - použijte emailové adresy aktivních kontaktů
+      const contactEmails = activeContacts.map(contact => contact.email);
+
+      console.log('Target Groups:', targetGroups);
+      console.log('Contacts in Groups:', allContacts.map(contact => contact.email));
+
+      // Příprava dat pro kampaň
+      const campaignData = {
+        name: req.body.name,
+        emailTemplateId: req.body.emailTemplateId,
+        sendingProfileId: req.body.sendingProfileId,
+        targetGroups: req.body.targetGroups.map((id: string) => new mongoose.Types.ObjectId(id)),
+        launchDate: req.body.launchDate ? new Date(req.body.launchDate) : new Date(),
+        sendUntil: req.body.sendUntil ? new Date(req.body.sendUntil) : new Date(),
+        status: 'scheduled',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      // Vytvoření kampaně v MongoDB
+      const campaign = new Campaign(campaignData);
+      await campaign.save();
+      campaignId = campaign._id.toString();
+
+      // Pokus o vytvoření kampaně v Brevo
+      const brevoCampaign = await brevoService.createCampaign({
+        name: campaign.name,
+        emailTemplateId: campaign.emailTemplateId?.toString() || '',
+        sendingProfileId: req.body.sendingProfileId,
+        targetGroups: campaign.targetGroups.map(id => id.toString()),
+        launchDate: campaign.launchDate?.toISOString() || new Date().toISOString(),
+        sendUntil: campaign.sendUntil?.toISOString() || new Date().toISOString(),
+        htmlContent: emailTemplate.content,
+        contacts: contactEmails  // Přidáme emailové adresy, které jsme už získali výše
+      });
+
+      // Kontrola odpovědi z Brevo
+      if (brevoCampaign.success && brevoCampaign.campaignId) {
+        // Aktualizace Brevo ID v MongoDB
+        const updatedCampaign = await Campaign.findByIdAndUpdate(
+          campaignId, 
+          { 
+            brevoId: brevoCampaign.campaignId.toString(), 
+            status: 'scheduled' 
+          },
+          { new: true }
+        ).populate('emailTemplateId')
+         .populate('landingPageId')
+         .populate('targetGroups');
+
+        res.status(201).json(updatedCampaign);
+      } else {
+        // Smazání kampaně, pokud selhalo vytvoření v Brevo
+        await Campaign.findByIdAndDelete(campaignId);
+        
+        res.status(400).json({ 
+          error: 'Nepodařilo se vytvořit kampaň v Brevo',
+          details: brevoCampaign.details
+        });
+      }
+
+    } catch (error: any) {
+      // Smazání kampaně v případě chyby
+      if (campaignId) {
+        try {
+          await Campaign.findByIdAndDelete(campaignId);
+        } catch (deleteError) {
+          console.error('Chyba při mazání kampaně:', deleteError);
+        }
+      }
+
+      // Podrobné logování chyby
+      console.error('Detailní chyba vytváření kampaně:', error);
+
+      res.status(400).json({ 
+        error: 'Nepodařilo se vytvořit kampaň', 
+        message: error.message,
+        details: error.details || {}
+      });
     }
   },
   

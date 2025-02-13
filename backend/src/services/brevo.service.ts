@@ -3,6 +3,8 @@
 import * as SibApi from '@sendinblue/client';
 import dotenv from 'dotenv';
 import { EmailTemplate } from '../models/email-template';
+import { SendingProfile } from '../models/sending-profile.model';
+import { Group } from '../models/group.model';
 
 dotenv.config();
 
@@ -69,14 +71,15 @@ export const brevoService = {
 
 // backend/src/services/brevo.service.ts
 
-// backend/src/services/brevo.service.ts
-
 async createCampaign(campaignData: {
   name: string;
-  subject?: string;
-  content?: string;
-  isHTML?: boolean;
-  launchDate?: string;
+  emailTemplateId: string;
+  sendingProfileId: string;
+  targetGroups: string[];
+  launchDate: string;
+  sendUntil: string;
+  contacts: string[];
+  htmlContent?: string;
 }): Promise<CampaignResponse> {
   try {
     // 1. Create contact list
@@ -88,41 +91,83 @@ async createCampaign(campaignData: {
     const newList = await contactsApi.createList(createList);
     console.log('Created list with response:', newList.body);
 
-    // 2. Create campaign
+    // 2. Add contacts to the list
+    if (campaignData.contacts && campaignData.contacts.length > 0) {
+      try {
+        // Nejdřív získáme existující kontakty
+        const existingContacts = await contactsApi.getContacts();
+        
+        for (const email of campaignData.contacts) {
+          try {
+            // Pro každý email buď aktualizujeme listIds nebo vytvoříme nový kontakt
+            const contactInfo = {
+              email: email,
+              listIds: [newList.body.id]
+            };
+    
+            try {
+              // Pokusíme se updatovat existující kontakt
+              await contactsApi.updateContact(email, {
+                listIds: [newList.body.id]
+              });
+            } catch (updateError) {
+              // Pokud kontakt neexistuje, vytvoříme nový
+              await contactsApi.createContact(contactInfo);
+            }
+          } catch (error) {
+            console.error(`Error processing contact ${email}:`, error);
+          }
+        }
+        console.log(`Processed ${campaignData.contacts.length} contacts`);
+      } catch (contactError) {
+        console.error('Error managing contacts:', contactError);
+        throw new Error('Failed to manage contacts');
+      }
+    } else {
+      throw new Error('No contacts provided');
+    }
+
+    // 3. Create email campaign
     console.log('Creating email campaign...');
     const emailCampaign = new SibApi.CreateEmailCampaign();
     
     emailCampaign.name = campaignData.name;
-    emailCampaign.subject = campaignData.subject || campaignData.name;
     
+    // Načtení šablony emailu
+    const emailTemplate = await EmailTemplate.findById(campaignData.emailTemplateId);
+    if (!emailTemplate) {
+      throw new Error('Email template not found');
+    }
+    
+    emailCampaign.subject = emailTemplate.subject;
+    
+    // Načtení sending profile
+    const sendingProfile = await SendingProfile.findById(campaignData.sendingProfileId);
+    if (!sendingProfile) {
+      throw new Error('Sending profile not found');
+    }
+
     emailCampaign.sender = {
-      name: "Phishing Campaign", 
-      email: "pslibedu@pslib-edu.cz"
+      name: sendingProfile.profileName, 
+      email: sendingProfile.smtpFrom
     };
     
-    emailCampaign.htmlContent = campaignData.content ? 
-      (campaignData.isHTML ? campaignData.content : `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8">
-          </head>
-          <body>
-            <pre>${campaignData.content}</pre>
-          </body>
-        </html>
-      `) : '<p>No content provided</p>';
+    // Nastavení HTML obsahu
+    emailCampaign.htmlContent = emailTemplate.content || '<p>No content provided</p>';
     
+    // Nastavení příjemců
     emailCampaign.recipients = {
       listIds: [newList.body.id]
     };
 
+    // Nastavení data spuštění
     if (campaignData.launchDate) {
       emailCampaign.scheduledAt = new Date(campaignData.launchDate).toISOString();
     }
 
     console.log('Final campaign data:', JSON.stringify(emailCampaign, null, 2));
     
+    // Vytvoření kampaně
     const response = await apiInstance.createEmailCampaign(emailCampaign);
     console.log('Campaign created successfully:', response.body);
     
@@ -133,21 +178,22 @@ async createCampaign(campaignData: {
       details: {
         name: campaignData.name,
         listId: newList.body.id,
-        scheduledAt: emailCampaign.scheduledAt
+        scheduledAt: emailCampaign.scheduledAt,
+        contactCount: campaignData.contacts.length
       }
     };
 
   } catch (err: any) {
-    console.error('Error creating campaign:', err);
+    console.error('Detailed Brevo error:', {
+      statusCode: err.response?.statusCode,
+      body: err.response?.body,
+      message: err.message
+    });
     
-    const errorMessage = err.response?.body?.message || 'Failed to create campaign';
-    const errorDetails = err.response?.body || err;
-    
-    // Vrátíme strukturovanou chybovou odpověď
-    throw {
+    return {
       success: false,
-      message: errorMessage,
-      details: errorDetails
+      message: err.response?.body?.message || 'Failed to create campaign',
+      details: err.response?.body || err
     };
   }
 }

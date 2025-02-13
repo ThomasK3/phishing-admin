@@ -5,34 +5,28 @@ import EmailImportDialog from './EmailImportDialog';
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import { api } from '../services/api';
-
-interface EmailTemplate {
-  id: number;
-  internalName: string;
-  displayName: string;
-  subject: string;
-  content: string;
-  isHTML: boolean;
-  attachments: File[];
-  priority: 'normal' | 'high' | 'low';
-  language: 'cs' | 'en';
-}
+import { EmailTemplate } from '../types/email-template';
 
 const EmailTemplateEditor: React.FC = () => {
-  // State management
   const [templates, setTemplates] = useState<EmailTemplate[]>([]);
   const [previewMode, setPreviewMode] = useState(false);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<EmailTemplate>({
     id: 0,
     internalName: '',
+    envelopeSender: '',
     displayName: '',
+    replyTo: '',
     subject: '',
     content: '',
-    isHTML: false,
+    isHTML: true,
+    hasTrackingPixel: false,
     attachments: [],
     priority: 'normal',
     language: 'cs',
+    scheduledTime: '',
+    includeFakeForward: false,
+    fakeForwardFrom: ''
   });
 
   // Načtení šablon při prvním renderu
@@ -75,35 +69,33 @@ const EmailTemplateEditor: React.FC = () => {
       alert('Prosím vyplňte název šablony a předmět emailu');
       return;
     }
-
+  
     try {
+      // Přidání výchozí hodnoty, pokud není nastavena
+      const templateToSave = {
+        ...currentTemplate,
+        envelopeSender: currentTemplate.envelopeSender || 'noreply@vasedomena.cz',
+        isHTML: currentTemplate.isHTML,
+        content: currentTemplate.content,
+        lastModified: new Date().toISOString()
+      };
+  
       if (currentTemplate.id === 0) {
         // Vytvoření nové šablony
-        const newTemplate = await api.createEmailTemplate(currentTemplate);
+        const newTemplate = await api.createEmailTemplate(templateToSave);
         setTemplates([...templates, newTemplate]);
       } else {
         // Aktualizace existující šablony
         const updatedTemplate = await api.updateEmailTemplate(
           currentTemplate.id.toString(),
-          currentTemplate
+          templateToSave
         );
         setTemplates(templates.map(t => 
           t.id === currentTemplate.id ? updatedTemplate : t
         ));
       }
-
-      // Reset formuláře
-      setCurrentTemplate({
-        id: 0,
-        internalName: '',
-        displayName: '',
-        subject: '',
-        content: '',
-        isHTML: false,
-        attachments: [],
-        priority: 'normal',
-        language: 'cs',
-      });
+  
+      alert('Šablona byla úspěšně uložena');
     } catch (error) {
       console.error('Chyba při ukládání šablony:', error);
       alert('Nepodařilo se uložit šablonu');
@@ -131,6 +123,7 @@ const EmailTemplateEditor: React.FC = () => {
     });
   };
 
+  // Zbytek kódu zůstává nezměněn (moduly, formáty, atd.)
   const modules = {
     toolbar: [
       [{ 'header': [1, 2, false] }],

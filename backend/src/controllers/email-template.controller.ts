@@ -18,8 +18,9 @@ export const emailTemplateController = {
       const template = new EmailTemplate(req.body);
       await template.save();
       res.status(201).json(template);
-    } catch (error) {
-      res.status(400).json({ error: 'Chyba při vytváření šablony' });
+    } catch (err: any) { // změna z error na err: any
+      console.error('Chyba při vytváření šablony:', err);
+      res.status(400).json({ error: 'Chyba při vytváření šablony', details: err.message });
     }
   },
 
