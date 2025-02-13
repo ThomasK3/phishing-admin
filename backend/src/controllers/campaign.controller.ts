@@ -40,33 +40,43 @@ export const campaignController = {
       // Vytvoření kampaně v MongoDB
       const campaign = new Campaign(req.body);
       await campaign.save();
-
+  
       // Pokus o vytvoření kampaně v Brevo
       try {
         const brevoCampaign = await brevoService.createCampaign({
           ...req.body,
           id: campaign._id.toString()
         });
-        
-        // Uložení Brevo ID jako string
-        const brevoIdString = brevoCampaign.id.toString();
-        await Campaign.findByIdAndUpdate(campaign._id, { brevoId: brevoIdString });
+  
+        // Ověření, zda brevoCampaign obsahuje id
+        if (!brevoCampaign || !('id' in brevoCampaign)) {
+          throw new Error('Brevo campaign response does not contain an ID');
+        }
+  
+        // Uložení Brevo ID do MongoDB
+        await Campaign.findByIdAndUpdate(campaign._id, { 
+          brevoId: brevoCampaign.id as string, // Explicitní přetypování na string
+          status: 'scheduled'  
+        });
+  
+        const populatedCampaign = await Campaign.findById(campaign._id)
+          .populate('emailTemplateId')
+          .populate('landingPageId')
+          .populate('targetGroups');
+  
+        res.status(201).json(populatedCampaign);
       } catch (brevoError) {
+        // Pokud se nepodaří vytvořit kampaň v Brevo, smažeme ji i z MongoDB
+        await Campaign.findByIdAndDelete(campaign._id);
         console.error('Error creating Brevo campaign:', brevoError);
-        // Pokračujeme i při selhání Brevo integrace
+        throw brevoError;
       }
-
-      const populatedCampaign = await Campaign.findById(campaign._id)
-        .populate('emailTemplateId')
-        .populate('landingPageId')
-        .populate('targetGroups');
-
-      res.status(201).json(populatedCampaign);
     } catch (error) {
       console.error('Error creating campaign:', error);
-      res.status(400).json({ error: 'Error creating campaign' });
+      res.status(400).json({ error: 'Nepodařilo se vytvořit kampaň' });
     }
   },
+  
 
   // Aktualizovat kampaň
   update: async (req: Request, res: Response) => {
