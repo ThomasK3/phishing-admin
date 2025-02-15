@@ -1,7 +1,5 @@
 # **Phishing Admin Tool**
 
-Na základě poskytnutých souborů udělám detailní analýzu projektu:
-
 # **Architektura projektu**
 
 Projekt je rozdělen na dvě hlavní části:
